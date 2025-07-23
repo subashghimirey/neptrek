@@ -186,10 +186,13 @@ class HomeContent extends StatelessWidget {
               ),
             ),
             if (trekProvider.isLoadingRecommended)
-              const SizedBox(
-                width: 20,
-                height: 20,
-                child: CircularProgressIndicator(strokeWidth: 2),
+              const Padding(
+                padding: EdgeInsets.only(left: 8.0),
+                child: SizedBox(
+                  width: 20,
+                  height: 20,
+                  child: CircularProgressIndicator(strokeWidth: 2),
+                ),
               ),
           ],
         ),

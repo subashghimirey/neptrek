@@ -56,7 +56,7 @@ class Trek {
 
   factory Trek.fromJson(Map<String, dynamic> json) {
     return Trek(
-      id: json['id'] as int,
+      id: json['id'] != null ? (json['id'] is String ? int.parse(json['id']) : json['id'] as int) : -1,
       name: json['name'] as String,
       district: json['district'] as String,
       region: json['region'] as String,

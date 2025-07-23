@@ -1,0 +1,54 @@
+import 'dart:convert';
+import 'dart:io';
+import 'package:http/http.dart' as http;
+import '../utils/cloudinary_config.dart';
+
+class CloudinaryService {
+  static String get cloudName => CloudinaryConfig.cloudName;
+  static String get uploadPreset => CloudinaryConfig.uploadPreset;
+  static String get apiKey => CloudinaryConfig.apiKey;
+
+  static String get uploadUrl => 
+    'https://api.cloudinary.com/v1_1/$cloudName/image/upload';
+
+  static Future<String?> uploadImage(File image) async {
+    try {
+      final uri = Uri.parse(uploadUrl);
+      final request = http.MultipartRequest('POST', uri)
+        ..fields['upload_preset'] = uploadPreset
+        ..fields['api_key'] = apiKey
+        ..files.add(
+          await http.MultipartFile.fromPath(
+            'file',
+            image.path,
+          ),
+        );
+
+      final response = await request.send();
+      final responseData = await response.stream.toBytes();
+      final responseString = String.fromCharCodes(responseData);
+      final jsonData = json.decode(responseString);
+
+      if (response.statusCode == 200) {
+        return jsonData['secure_url'];
+      } else {
+        throw Exception('Failed to upload image: ${jsonData['error']['message']}');
+      }
+    } catch (e) {
+      throw Exception('Error uploading image: $e');
+    }
+  }
+
+  static Future<List<String>> uploadImages(List<File> images) async {
+    final List<String> uploadedUrls = [];
+    
+    for (final image in images) {
+      final url = await uploadImage(image);
+      if (url != null) {
+        uploadedUrls.add(url);
+      }
+    }
+    
+    return uploadedUrls;
+  }
+}

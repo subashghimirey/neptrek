@@ -4,6 +4,7 @@ import 'package:http/http.dart' as http;
 import 'dart:convert';
 
 import '../models/trek_model.dart';
+import '../utils/constants.dart';
 
 class TrekProvider with ChangeNotifier {
   List<Trek> _treks = [];
@@ -30,10 +31,9 @@ class TrekProvider with ChangeNotifier {
   String? get detailsErrorMessage => _detailsErrorMessage;
   List<String> get favoriteIds => _favoriteIds.keys.toList();
 
-  static const String _baseUrl = 'http://192.168.1.3:8000/api/';
-  final String _treksUrl = '${_baseUrl}treks/';
-  final String _recommendationsUrl = '${_baseUrl}recommendations/';
-  final String _favoritesUrl = '${_baseUrl}favorites/';
+  final String _treksUrl = '${ApiConstants.apiUrl}/treks/';
+  final String _recommendationsUrl = '${ApiConstants.apiUrl}/recommendations/treks/';
+  final String _favoritesUrl = '${ApiConstants.apiUrl}/favorites/';
 
   // Toggle trek favorite status
   Future<void> toggleFavorite(String trekId, String? authToken, {String? userId}) async {
@@ -45,7 +45,7 @@ class TrekProvider with ChangeNotifier {
       if (_favoriteIds.containsKey(trekId)) {
         // Remove from favorites using the stored favorite ID
         final String favoriteId = _favoriteIds[trekId]!;
-        final String deleteFavoriteUrl = '${_baseUrl}favorites/$favoriteId/';
+        final String deleteFavoriteUrl = '${ApiConstants.apiUrl}/favorites/$favoriteId/';
         
         final response = await http.delete(
           Uri.parse(deleteFavoriteUrl),
@@ -153,12 +153,8 @@ class TrekProvider with ChangeNotifier {
 
     try {
       if (authToken == null) {
-        // Fallback to first few treks if no authentication
-        if (_treks.isNotEmpty) {
-          _recommendedTreks = _treks.take(3).toList();
-        } else {
-          _recommendedTreks = [];
-        }
+        _recommendedErrorMessage = 'Authentication required for recommendations';
+        _recommendedTreks = [];
         _isLoadingRecommended = false;
         notifyListeners();
         return;
@@ -177,26 +173,29 @@ class TrekProvider with ChangeNotifier {
         },
       );
 
+      print(response.body);
+
       if (response.statusCode == 200) {
-        final List<dynamic> jsonData = json.decode(response.body);
-        _recommendedTreks = jsonData.map((trekJson) => Trek.fromJson(trekJson)).toList();
-        _recommendedErrorMessage = null;
+        final Map<String, dynamic> responseData = json.decode(response.body);
+        if (responseData['success'] == true && responseData['recommended_treks'] != null) {
+          final List<dynamic> treksData = responseData['recommended_treks'];
+          _recommendedTreks = treksData.map((trekJson) => Trek.fromJson(trekJson)).toList();
+          _recommendedErrorMessage = null;
+        } else {
+          _recommendedErrorMessage = 'No recommendations available';
+          _recommendedTreks = [];
+        }
       } else if (response.statusCode == 401) {
-        _recommendedErrorMessage = 'Authentication required for personalized recommendations';
-        // Fallback to general treks
-        if (_treks.isNotEmpty) {
-          _recommendedTreks = _treks.take(3).toList();
-        } else {
-          _recommendedTreks = [];
-        }
+        _recommendedErrorMessage = 'Authentication required for recommendations';
+        _recommendedTreks = [];
       } else {
-        _recommendedErrorMessage = 'Failed to fetch personalized recommendations';
-        // Fallback to general treks
-        if (_treks.isNotEmpty) {
-          _recommendedTreks = _treks.take(3).toList();
-        } else {
-          _recommendedTreks = [];
+        try {
+          final Map<String, dynamic> errorData = json.decode(response.body);
+          _recommendedErrorMessage = errorData['message'] ?? errorData['error'] ?? 'Failed to fetch recommendations';
+        } catch (e) {
+          _recommendedErrorMessage = 'Failed to fetch recommendations: HTTP ${response.statusCode}';
         }
+        _recommendedTreks = [];
       }
     } catch (e) {
       if (e.toString().contains('timeout') || e.toString().contains('Request timeout')) {
@@ -206,13 +205,7 @@ class TrekProvider with ChangeNotifier {
       } else {
         _recommendedErrorMessage = 'Network error while fetching recommendations: ${e.toString()}';
       }
-      
-      // Fallback to general treks on error
-      if (_treks.isNotEmpty) {
-        _recommendedTreks = _treks.take(3).toList();
-      } else {
-        _recommendedTreks = [];
-      }
+      _recommendedTreks = [];
     }
 
     _isLoadingRecommended = false;
@@ -242,7 +235,7 @@ class TrekProvider with ChangeNotifier {
     notifyListeners();
 
     try {
-      final String trekDetailUrl = '${_baseUrl}treks/$trekId/';
+      final String trekDetailUrl = '${ApiConstants.apiUrl}/treks/$trekId/';
       
       final response = await http.get(
         Uri.parse(trekDetailUrl),
@@ -298,7 +291,7 @@ class TrekProvider with ChangeNotifier {
 
   // Add trek to favorites
   Future<void> addToFavorites(int trekId, String authToken, {required String userId}) async {
-    final String favoritesUrl = '${_baseUrl}favorites/';
+    final String favoritesUrl = '${ApiConstants.apiUrl}/favorites/';
 
     try {
       final data = {'trek_id': trekId};

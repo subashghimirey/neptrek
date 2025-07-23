@@ -6,6 +6,7 @@ import 'package:neptrek/providers/trek_provider.dart';
 import 'package:neptrek/screens/profile_screen.dart';
 import 'package:neptrek/screens/posts_screen.dart';
 import 'package:neptrek/screens/home_content.dart';
+import 'package:neptrek/screens/sos_screen.dart';
 
 class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});
@@ -36,6 +37,7 @@ class _HomeScreenState extends State<HomeScreen> {
         children: const [
           HomeContent(),
           PostsScreen(),
+          SOSScreen(),
           ProfileScreen(),
         ],
       ),
@@ -50,12 +52,19 @@ class _HomeScreenState extends State<HomeScreen> {
             label: 'Posts',
           ),
           BottomNavigationBarItem(
+            icon: Icon(Icons.emergency),
+            label: 'SOS',
+          ),
+          BottomNavigationBarItem(
             icon: Icon(Icons.person),
             label: 'Profile',
           ),
         ],
         currentIndex: _selectedIndex,
-        selectedItemColor: Colors.amber[800],
+        unselectedItemColor: Colors.black87, // Dark color for inactive items
+        selectedItemColor: Colors.amber[800], // Keep the amber color for active items
+        showUnselectedLabels: true, // Show labels for inactive items
+        type: BottomNavigationBarType.fixed, // Ensures all labels are visible
         onTap: (index) {
           setState(() {
             _selectedIndex = index;

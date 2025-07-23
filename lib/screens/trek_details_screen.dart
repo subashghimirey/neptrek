@@ -4,6 +4,8 @@ import 'package:provider/provider.dart';
 import 'package:neptrek/providers/trek_provider.dart';
 import 'package:neptrek/models/trek_model.dart';
 import 'package:neptrek/providers/auth_provider.dart';
+import 'package:neptrek/screens/tims_booking_screen.dart';
+import 'package:neptrek/utils/asset_constants.dart';
 
 class TrekDetailsScreen extends StatefulWidget {
   final int trekId;
@@ -81,21 +83,33 @@ class _TrekDetailsScreenState extends State<TrekDetailsScreen> {
                   onPressed: () => Navigator.of(context).pop(),
                 ),
                 actions: [
-                  Consumer<TrekProvider>(
-                    builder: (context, trekProvider, child) {
-                      final isFav = trekProvider.isFavorite(widget.trekId.toString());
-                      return IconButton(
-                        icon: Icon(
-                          isFav ? Icons.favorite : Icons.favorite_border,
-                          color: isFav ? Colors.red : Colors.white,
-                          size: 28,
-                        ),
-                        onPressed: _toggleFavorite,
-                      );
-                    },
+                  IconButton(
+                    icon: Icon(
+                      trekProvider.isFavorite(widget.trekId.toString())
+                          ? Icons.favorite
+                          : Icons.favorite_border,
+                      color: trekProvider.isFavorite(widget.trekId.toString())
+                          ? Colors.red
+                          : Colors.white,
+                      size: 28,
+                    ),
+                    onPressed: _toggleFavorite,
                   ),
                 ],
                 flexibleSpace: FlexibleSpaceBar(
+                  background: trekProvider.selectedTrek?.photos.isNotEmpty == true
+                    ? Image.network(
+                        trekProvider.selectedTrek!.photos[0],
+                        fit: BoxFit.cover,
+                        errorBuilder: (context, error, stackTrace) => Image.asset(
+                          AssetConstants.defaultTrekImage,
+                          fit: BoxFit.cover,
+                        ),
+                      )
+                    : Image.asset(
+                        AssetConstants.defaultTrekImage,
+                        fit: BoxFit.cover,
+                      ),
                   title: Text(
                     trekProvider.selectedTrek?.name ?? widget.trekName ?? 'Trek Details',
                     style: const TextStyle(
@@ -110,12 +124,6 @@ class _TrekDetailsScreenState extends State<TrekDetailsScreen> {
                       ],
                     ),
                   ),
-                  background: trekProvider.selectedTrek?.photos.isNotEmpty == true
-                      ? Image.network(
-                          trekProvider.selectedTrek!.photos.first,
-                          fit: BoxFit.cover,
-                        )
-                      : Container(color: Colors.grey.shade300),
                 ),
               ),
               
@@ -194,79 +202,173 @@ class _TrekDetailsScreenState extends State<TrekDetailsScreen> {
       );
     }
 
-    return Padding(
-      padding: const EdgeInsets.all(16.0),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          // Basic Info Section
-          _buildBasicInfoSection(trek),
-          const SizedBox(height: 24),
-          
-          // Description Section
-          _buildDescriptionSection(trek),
-          const SizedBox(height: 24),
-          
-          // Itinerary Section
-          _buildItinerarySection(trek),
-          const SizedBox(height: 24),
-          
-          // Cost Breakdown Section
-          _buildCostSection(trek),
-          const SizedBox(height: 24),
-          
-          // Elevation Profile Section
-          _buildElevationSection(trek),
-          const SizedBox(height: 24),
-          
-          // Permits Section
-          _buildPermitsSection(trek),
-          const SizedBox(height: 24),
-          
-          // Recommended Gear Section
-          _buildGearSection(trek),
-          const SizedBox(height: 24),
-          
-          // Safety Info Section
-          _buildSafetySection(trek),
-          const SizedBox(height: 24),
-          
-          // Photos Gallery Section
-          if (trek.photos.isNotEmpty) _buildPhotosSection(trek),
-          const SizedBox(height: 24),
-          
-          // Nearby Attractions Section
-          if (trek.nearbyAttractions.isNotEmpty) _buildAttractionsSection(trek),
-          const SizedBox(height: 32),
-          
-          // Add to Favorites Button
-          ElevatedButton(
-            onPressed: () {
-              final authProvider = Provider.of<AuthProvider>(context, listen: false);
-              final trekProvider = Provider.of<TrekProvider>(context, listen: false);
+    return SingleChildScrollView(
+      child: Padding(
+        padding: const EdgeInsets.all(16.0),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: <Widget>[
+            // TIMS Pass Booking Button
+            Card(
+              elevation: 4,
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(12),
+                side: BorderSide(color: Colors.green.shade100),
+              ),
+              child: Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 20.0, vertical: 16.0),
+                child: Column(
+                  children: [
+                    Row(
+                      children: [
+                        Container(
+                          padding: const EdgeInsets.all(8),
+                          decoration: BoxDecoration(
+                            color: Colors.green.shade50,
+                            borderRadius: BorderRadius.circular(8),
+                          ),
+                          child: Icon(
+                            Icons.verified_user,
+                            color: Colors.green.shade700,
+                            size: 24,
+                          ),
+                        ),
+                        const SizedBox(width: 12),
+                        const Expanded(
+                          child: Text(
+                            'TIMS Pass Required',
+                            style: TextStyle(
+                              fontSize: 20,
+                              fontWeight: FontWeight.bold,
+                              color: Colors.green,
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
+                    const SizedBox(height: 12),
+                    Container(
+                      padding: const EdgeInsets.all(12),
+                      decoration: BoxDecoration(
+                        color: Colors.green.shade50,
+                        borderRadius: BorderRadius.circular(8),
+                        border: Border.all(color: Colors.green.shade100),
+                      ),
+                      child: const Row(
+                        children: [
+                          Icon(Icons.info_outline, color: Colors.green, size: 20),
+                          SizedBox(width: 12),
+                          Expanded(
+                            child: Text(
+                              'TIMS (Trekkers\' Information Management System) is mandatory for trekking',
+                              style: TextStyle(
+                                fontSize: 14,
+                                color: Colors.green,
+                                height: 1.3,
+                              ),
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                    const SizedBox(height: 20),
+                    SizedBox(
+                      width: double.infinity,
+                      height: 48,
+                      child: ElevatedButton.icon(
+                        icon: const Icon(Icons.confirmation_number, size: 20),
+                        label: const Text(
+                          'Book TIMS Pass',
+                          style: TextStyle(
+                            fontSize: 16,
+                            fontWeight: FontWeight.bold,
+                          ),
+                        ),
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: Colors.green,
+                          foregroundColor: Colors.white,
+                          elevation: 2,
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(8),
+                          ),
+                        ),
+                        onPressed: () {
+                          final authProvider = Provider.of<AuthProvider>(context, listen: false);
+                          if (!authProvider.isAuthenticated) {
+                            ScaffoldMessenger.of(context).showSnackBar(
+                              const SnackBar(
+                                content: Text('Please log in to book TIMS pass'),
+                                duration: Duration(seconds: 2),
+                              ),
+                            );
+                            return;
+                          }
+                          Navigator.push(
+                            context,
+                            MaterialPageRoute(
+                              builder: (context) => TimsBookingScreen(
+                                trekId: trek.id,
+                                trekkerArea: trek.region,
+                                route: '${trek.name} Trek',
+                              ),
+                            ),
+                          );
+                        },
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ),
+            const SizedBox(height: 24),
 
-              if (authProvider.user?.user.id == null) {
-                ScaffoldMessenger.of(context).showSnackBar(
-                  const SnackBar(
-                    content: Text('Please log in to add to favorites'),
-                    duration: Duration(seconds: 2),
-                  ),
-                );
-                return;
-              }
-
-              trekProvider.addToFavorites(
-                widget.trekId, 
-                authProvider.token!,
-                userId: authProvider.user!.user.id.toString()
-              );
-              ScaffoldMessenger.of(context).showSnackBar(
-                const SnackBar(content: Text('Added to favorites!')),
-              );
-            },
-            child: const Text('Add to Favorites'),
-          ),
-        ],
+            // Basic Info Section
+            _buildBasicInfoSection(trek),
+            const SizedBox(height: 24),
+            
+            // Description Section
+            _buildDescriptionSection(trek),
+            const SizedBox(height: 24),
+            
+            // Itinerary Section
+            _buildItinerarySection(trek),
+            const SizedBox(height: 24),
+            
+            // Cost Breakdown Section
+            _buildCostSection(trek),
+            const SizedBox(height: 24),
+            
+            // Elevation Profile Section
+            _buildElevationSection(trek),
+            const SizedBox(height: 24),
+            
+            // Permits Section
+            _buildPermitsSection(trek),
+            const SizedBox(height: 24),
+            
+            // Recommended Gear Section
+            _buildGearSection(trek),
+            const SizedBox(height: 24),
+            
+            // Safety Info Section
+            if (trek.safetyInfo.altitudeSicknessRisk?.isNotEmpty == true) ...[
+              _buildSafetySection(trek),
+              const SizedBox(height: 24),
+            ],
+            
+            // Photos Gallery Section
+            if (trek.photos.isNotEmpty) ...[
+              _buildPhotosSection(trek),
+              const SizedBox(height: 24),
+            ],
+            
+            // Nearby Attractions Section
+            if (trek.nearbyAttractions.isNotEmpty) ...[
+              _buildAttractionsSection(trek),
+              const SizedBox(height: 32),
+            ],
+          ],
+        ),
       ),
     );
   }

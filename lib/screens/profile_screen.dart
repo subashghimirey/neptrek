@@ -8,6 +8,43 @@ import 'package:neptrek/screens/favorites_screen.dart';
 class ProfileScreen extends StatelessWidget {
   const ProfileScreen({super.key});
 
+  Widget _buildListTile({
+    required IconData icon,
+    required String title,
+    String? subtitle,
+    required VoidCallback onTap,
+  }) {
+    return ListTile(
+      leading: Icon(icon),
+      title: Text(title),
+      subtitle: subtitle != null ? Text(subtitle) : null,
+      trailing: const Icon(Icons.chevron_right),
+      onTap: onTap,
+    );
+  }
+
+  Widget _buildStatColumn(String label, String value) {
+    return Column(
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        Text(
+          value,
+          style: const TextStyle(
+            fontSize: 20,
+            fontWeight: FontWeight.bold,
+          ),
+        ),
+        const SizedBox(height: 4),
+        Text(
+          label,
+          style: const TextStyle(
+            color: Colors.grey,
+          ),
+        ),
+      ],
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     final authProvider = Provider.of<AuthProvider>(context);
@@ -50,20 +87,41 @@ class ProfileScreen extends StatelessWidget {
         ],
       ),
       body: ListView(
-        padding: const EdgeInsets.all(16.0),
+        padding: const EdgeInsets.symmetric(vertical: 24.0),
         children: [
           // Profile Header with Avatar
-          Center(
+          Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 16.0),
             child: Column(
               children: [
-                CircleAvatar(
-                  radius: 50,
-                  backgroundColor: theme.colorScheme.primary.withOpacity(0.1),
-                  child: Icon(
-                    Icons.person,
-                    size: 50,
-                    color: theme.colorScheme.primary,
-                  ),
+                Stack(
+                  children: [
+                    CircleAvatar(
+                      radius: 50,
+                      backgroundColor: theme.colorScheme.primary.withOpacity(0.1),
+                      child: Icon(
+                        Icons.person,
+                        size: 50,
+                        color: theme.colorScheme.primary,
+                      ),
+                    ),
+                    Positioned(
+                      right: 0,
+                      bottom: 0,
+                      child: Container(
+                        padding: const EdgeInsets.all(4),
+                        decoration: BoxDecoration(
+                          color: theme.colorScheme.primary,
+                          shape: BoxShape.circle,
+                        ),
+                        child: const Icon(
+                          Icons.edit,
+                          size: 16,
+                          color: Colors.white,
+                        ),
+                      ),
+                    ),
+                  ],
                 ),
                 const SizedBox(height: 16),
                 // Display Name
@@ -84,47 +142,128 @@ class ProfileScreen extends StatelessWidget {
                       ),
                     ),
                   ),
+                const SizedBox(height: 16),
+                // User Stats Row
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    _buildStatColumn('Treks', '12'),
+                    Container(
+                      height: 40,
+                      width: 1,
+                      color: Colors.grey.withOpacity(0.3),
+                      margin: const EdgeInsets.symmetric(horizontal: 24),
+                    ),
+                    _buildStatColumn('Alerts', '3'),
+                    Container(
+                      height: 40,
+                      width: 1,
+                      color: Colors.grey.withOpacity(0.3),
+                      margin: const EdgeInsets.symmetric(horizontal: 24),
+                    ),
+                    _buildStatColumn('Favorites', '8'),
+                  ],
+                ),
               ],
             ),
           ),
           const SizedBox(height: 32),
           
-          // Action Buttons Section
+          // Settings and Actions Section
           Card(
-            elevation: 1,
-            margin: EdgeInsets.zero,
+            elevation: 2,
+            margin: const EdgeInsets.symmetric(horizontal: 16),
             shape: RoundedRectangleBorder(
               borderRadius: BorderRadius.circular(12),
             ),
             child: Column(
               children: [
-                // View Favorites Button
-                ListTile(
-                  leading: Icon(Icons.favorite, color: theme.colorScheme.primary),
-                  title: const Text('View Favorites'),
-                  trailing: const Icon(Icons.chevron_right),
+                _buildListTile(
+                  icon: Icons.favorite_border,
+                  title: 'My Favorites',
+                  onTap: () => Navigator.push(
+                    context,
+                    MaterialPageRoute(builder: (context) => const FavoritesScreen()),
+                  ),
+                ),
+                const Divider(height: 1),
+                _buildListTile(
+                  icon: Icons.track_changes,
+                  title: 'My Treks',
                   onTap: () {
-                    Navigator.push(
-                      context,
-                      MaterialPageRoute(
-                        builder: (context) => const FavoritesScreen(),
-                      ),
-                    );
+                    // TODO: Navigate to My Treks screen
                   },
                 ),
-                Divider(height: 1, color: theme.dividerColor),
-                // Update Interests Button
-                ListTile(
-                  leading: Icon(Icons.interests, color: theme.colorScheme.primary),
-                  title: const Text('Update Interests'),
-                  trailing: const Icon(Icons.chevron_right),
+                const Divider(height: 1),
+                _buildListTile(
+                  icon: Icons.warning_outlined,
+                  title: 'My Alerts',
+                  subtitle: '3 active alerts',
                   onTap: () {
-                    Navigator.push(
-                      context,
-                      MaterialPageRoute(
-                        builder: (context) => const InterestsScreen(),
-                      ),
-                    );
+                    // TODO: Navigate to My Alerts screen
+                  },
+                ),
+                const Divider(height: 1),
+                _buildListTile(
+                  icon: Icons.interests,
+                  title: 'Interests',
+                  onTap: () => Navigator.push(
+                    context,
+                    MaterialPageRoute(builder: (context) => const InterestsScreen()),
+                  ),
+                ),
+              ],
+            ),
+          ),
+          const SizedBox(height: 16),
+
+          // Account Settings Section
+          Card(
+            elevation: 2,
+            margin: const EdgeInsets.symmetric(horizontal: 16),
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(12),
+            ),
+            child: Column(
+              children: [
+                _buildListTile(
+                  icon: Icons.person_outline,
+                  title: 'Edit Profile',
+                  subtitle: 'Update your personal information',
+                  onTap: () {
+                    // TODO: Navigate to Edit Profile screen
+                  },
+                ),
+                const Divider(height: 1),
+                _buildListTile(
+                  icon: Icons.password,
+                  title: 'Change Password',
+                  onTap: () {
+                    // TODO: Navigate to Change Password screen
+                  },
+                ),
+                const Divider(height: 1),
+                _buildListTile(
+                  icon: Icons.notifications_outlined,
+                  title: 'Notifications',
+                  onTap: () {
+                    // TODO: Navigate to Notifications settings
+                  },
+                ),
+                const Divider(height: 1),
+                _buildListTile(
+                  icon: Icons.security,
+                  title: 'Privacy & Security',
+                  onTap: () {
+                    // TODO: Navigate to Privacy settings
+                  },
+                ),
+                const Divider(height: 1),
+                _buildListTile(
+                  icon: Icons.help_outline,
+                  title: 'Help & Support',
+                  onTap: () {
+                    // TODO: Navigate to Help screen
                   },
                 ),
               ],
@@ -133,7 +272,7 @@ class ProfileScreen extends StatelessWidget {
           
           // Version info at bottom
           Padding(
-            padding: const EdgeInsets.only(top: 24.0),
+            padding: const EdgeInsets.all(24.0),
             child: Center(
               child: Text(
                 'NepTrek v1.0.0',

@@ -20,8 +20,8 @@ class AuthProvider with ChangeNotifier {
 
  
   static const String _baseUrl = 'http://192.168.1.3:8000/api/';
-  final String _signupUrl = '${_baseUrl}signup/';
-  final String _loginUrl = '${_baseUrl}login/';
+  final String _signupUrl = '${_baseUrl}auth/signup/';
+  final String _loginUrl = '${_baseUrl}auth/login/';
 
 
   AuthProvider() {

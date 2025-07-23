@@ -1,9 +1,14 @@
-// lib/main.dart
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
+// Providers
 import 'package:neptrek/providers/auth_provider.dart';
 import 'package:neptrek/providers/trek_provider.dart';
+import 'package:neptrek/providers/sos_provider.dart';
+import 'package:neptrek/providers/tims_provider.dart';
+import 'package:neptrek/providers/post_provider.dart';
+
+// Screens
 import 'package:neptrek/screens/login_screen.dart';
 import 'package:neptrek/screens/home_screen.dart';
 import 'package:neptrek/screens/interests_screen.dart';
@@ -21,6 +26,9 @@ class MyApp extends StatelessWidget {
       providers: [
         ChangeNotifierProvider(create: (context) => AuthProvider()),
         ChangeNotifierProvider(create: (context) => TrekProvider()),
+        ChangeNotifierProvider(create: (context) => SOSProvider()),
+        ChangeNotifierProvider(create: (context) => TimsProvider()),
+        ChangeNotifierProvider(create: (context) => PostProvider()),
       ],
       child: MaterialApp(
         title: 'NepTrek', // Updated app title

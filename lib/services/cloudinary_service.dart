@@ -10,7 +10,7 @@ class CloudinaryService {
   static String get uploadUrl => 
     'https://api.cloudinary.com/v1_1/$cloudName/image/upload';
 
-  static Future<String?> uploadImage(File image) async {
+  static Future<String> uploadImage(File image) async {
     try {
       final uri = Uri.parse(uploadUrl);
       final request = http.MultipartRequest('POST', uri)
@@ -39,15 +39,8 @@ class CloudinaryService {
   }
 
   static Future<List<String>> uploadImages(List<File> images) async {
-    final List<String> uploadedUrls = [];
-    
-    for (final image in images) {
-      final url = await uploadImage(image);
-      if (url != null) {
-        uploadedUrls.add(url);
-      }
-    }
-    
-    return uploadedUrls;
+    final List<Future<String>> futures = 
+      images.map((image) => uploadImage(image)).toList();
+    return Future.wait(futures);
   }
-}
+  }

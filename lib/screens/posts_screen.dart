@@ -77,12 +77,15 @@ class _PostsScreenState extends State<PostsScreen> {
           }
 
           return RefreshIndicator(
-            onRefresh: _fetchPosts,
+            onRefresh: () => _fetchPosts(),
             child: ListView.builder(
               itemCount: posts.length,
               itemBuilder: (ctx, i) {
                 final post = posts[i];
-                return PostCard(post: post);
+                return PostCard(
+                  key: ValueKey(post.id),
+                  post: post,
+                );
               },
             ),
           );

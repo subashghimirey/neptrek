@@ -23,11 +23,15 @@ class TimsBooking {
   final String homeOfficeNumber;
   final String homeAddress;
   final String transitPassCost;
+  final String permitCost;
+  final String? paymentStatus;
 
   TimsBooking({
     required this.trekId,
     required this.transactionId,
     required this.image,
+    required this.permitCost,
+    this.paymentStatus = 'pending',
     required this.fullName,
     required this.nationality,
     required this.passportNumber,
@@ -77,7 +81,64 @@ class TimsBooking {
       'home_office_number': homeOfficeNumber,
       'home_address': homeAddress,
       'transit_pass_cost': transitPassCost,
+      'permit_cost': permitCost,
+      'payment_status': paymentStatus,
     };
+  }
+
+  factory TimsBooking.create({
+    required int trekId,
+    required String transactionId,
+    required String permitCost,
+    required String fullName,
+    required String nationality,
+    required String passportNumber,
+    required String gender,
+    required String dateOfBirth,
+    required String trekkerArea,
+    required String route,
+    required String entryDate,
+    required String exitDate,
+    required String nepalContactName,
+    required String nepalOrganization,
+    required String nepalDesignation,
+    required String nepalMobile,
+    required String nepalOfficeNumber,
+    required String nepalAddress,
+    required String homeContactName,
+    required String homeCity,
+    required String homeMobile,
+    required String homeOfficeNumber,
+    required String homeAddress,
+    required String transitPassCost,
+  }) {
+    return TimsBooking(
+      trekId: trekId,
+      transactionId: transactionId,
+      image: '', // This will be replaced after Cloudinary upload
+      permitCost: permitCost,
+      fullName: fullName,
+      nationality: nationality,
+      passportNumber: passportNumber,
+      gender: gender,
+      dateOfBirth: dateOfBirth,
+      trekkerArea: trekkerArea,
+      route: route,
+      entryDate: entryDate,
+      exitDate: exitDate,
+      nepalContactName: nepalContactName,
+      nepalOrganization: nepalOrganization,
+      nepalDesignation: nepalDesignation,
+      nepalMobile: nepalMobile,
+      nepalOfficeNumber: nepalOfficeNumber,
+      nepalAddress: nepalAddress,
+      homeContactName: homeContactName,
+      homeCity: homeCity,
+      homeMobile: homeMobile,
+      homeOfficeNumber: homeOfficeNumber,
+      homeAddress: homeAddress,
+      transitPassCost: transitPassCost,
+    );
   }
 
   factory TimsBooking.fromJson(Map<String, dynamic> json) {
@@ -98,6 +159,8 @@ class TimsBooking {
       nepalOrganization: json['nepal_organization'],
       nepalDesignation: json['nepal_designation'],
       nepalMobile: json['nepal_mobile'],
+      permitCost: json['permit_cost'] ?? '2000.00',
+      paymentStatus: json['payment_status'] as String?,
       nepalOfficeNumber: json['nepal_office_number'],
       nepalAddress: json['nepal_address'],
       homeContactName: json['home_contact_name'],

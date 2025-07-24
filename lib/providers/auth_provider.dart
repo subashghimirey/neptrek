@@ -5,23 +5,26 @@ import 'dart:convert';
 import 'package:shared_preferences/shared_preferences.dart';
 
 import '../models/user_model.dart';
+import '../utils/constants.dart';
 
 class AuthProvider with ChangeNotifier {
   AuthUser? _user;
   String? _token;
   bool _isLoading = false;
   String? _errorMessage;
+  String? _userRole;
 
   AuthUser? get user => _user;
   String? get token => _token;
+  String? get userRole => _userRole;
   bool get isAuthenticated => _token != null;
+  bool get isAdmin => _userRole == 'admin';
   bool get isLoading => _isLoading;
   String? get errorMessage => _errorMessage;
 
  
-  static const String _baseUrl = 'http://192.168.1.3:8000/api/';
-  final String _signupUrl = '${_baseUrl}auth/signup/';
-  final String _loginUrl = '${_baseUrl}auth/login/';
+  final String _signupUrl = '${ApiConstants.apiUrl}/auth/signup/';
+  final String _loginUrl = '${ApiConstants.apiUrl}/auth/login/';
 
 
   AuthProvider() {
@@ -184,6 +187,7 @@ class AuthProvider with ChangeNotifier {
 
           _token = authResponse.token;
           _user = authResponse.user;
+          _userRole = _user?.role;
           
           _isLoading = false;
           notifyListeners(); // Notify immediately to trigger navigation
@@ -244,7 +248,7 @@ class AuthProvider with ChangeNotifier {
     
     try {
       final response = await http.get(
-        Uri.parse('${_baseUrl}users/${_user!.user.id}/'),
+        Uri.parse('${ApiConstants.apiUrl}/users/${_user!.user.id}/'),
         headers: {
           'Content-Type': 'application/json',
           'Authorization': 'Token $_token',
@@ -276,7 +280,7 @@ class AuthProvider with ChangeNotifier {
     notifyListeners();
 
     try {
-      final String updateUrl = '${_baseUrl}users/${_user!.user.id}/';
+      final String updateUrl = '${ApiConstants.apiUrl}/users/${_user!.user.id}/';
       
       final Map<String, dynamic> requestBody = {
         'profile': {
@@ -316,7 +320,7 @@ class AuthProvider with ChangeNotifier {
         return false;
       } else if (response.statusCode == 200) {
         try {
-          final Map<String, dynamic> userData = json.decode(response.body);
+          json.decode(response.body);
           
           // Create updated user with new interests
           final updatedProfile = _user!.user.profile.copyWith(interests: interests);
@@ -396,7 +400,7 @@ class AuthProvider with ChangeNotifier {
     notifyListeners();
 
     try {
-      final String favoritesUrl = '${_baseUrl}favorites/';
+      final String favoritesUrl = '${ApiConstants.apiUrl}/favorites/';
 
       final Map<String, dynamic> requestBody = {
         'user_id': _user!.user.id,

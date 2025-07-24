@@ -32,11 +32,11 @@ class CommentCard extends StatelessWidget {
               children: [
                 CircleAvatar(
                   radius: 16,
-                  backgroundImage: comment.userAvatar != null 
-                    ? NetworkImage(comment.userAvatar!)
+                  backgroundImage: comment.user.photoUrl.isNotEmpty
+                    ? NetworkImage(comment.user.photoUrl)
                     : null,
-                  child: comment.userAvatar == null 
-                    ? Text(comment.username[0].toUpperCase())
+                  child: comment.user.photoUrl.isEmpty
+                    ? Text(comment.user.displayName[0].toUpperCase())
                     : null,
                 ),
                 const SizedBox(width: 8),
@@ -45,7 +45,7 @@ class CommentCard extends StatelessWidget {
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       Text(
-                        comment.username,
+                        comment.user.displayName,
                         style: const TextStyle(
                           fontWeight: FontWeight.bold,
                           fontSize: 14,

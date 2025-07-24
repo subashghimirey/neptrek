@@ -11,6 +11,7 @@ import 'package:neptrek/providers/post_provider.dart';
 // Screens
 import 'package:neptrek/screens/login_screen.dart';
 import 'package:neptrek/screens/home_screen.dart';
+import 'package:neptrek/screens/admin_home_screen.dart';
 import 'package:neptrek/screens/interests_screen.dart';
 
 void main() {
@@ -36,6 +37,7 @@ class MyApp extends StatelessWidget {
           primarySwatch: Colors.blue,
           visualDensity: VisualDensity.adaptivePlatformDensity,
         ),
+        debugShowCheckedModeBanner: false, 
         home: Consumer<AuthProvider>(
           builder: (context, authProvider, child) {
             if (authProvider.isLoading) {
@@ -55,7 +57,10 @@ class MyApp extends StatelessWidget {
               return const InterestsScreen(isFirstTime: true);
             }
             
-            return const HomeScreen();
+            // Direct admin users to admin screen, regular users to home screen
+            return authProvider.isAdmin 
+              ? const AdminHomeScreen() 
+              : const HomeScreen();
           },
         ),
       ),

@@ -4,6 +4,7 @@ import 'package:provider/provider.dart';
 import 'package:neptrek/providers/auth_provider.dart';
 import 'package:neptrek/screens/interests_screen.dart';
 import 'package:neptrek/screens/favorites_screen.dart';
+import 'package:neptrek/screens/tims_list_screen.dart';
 
 class ProfileScreen extends StatelessWidget {
   const ProfileScreen({super.key});
@@ -215,6 +216,31 @@ class ProfileScreen extends StatelessWidget {
               ],
             ),
           ),
+          const SizedBox(height: 16),
+
+          // Bookings and Permits Section
+          Card(
+            elevation: 2,
+            margin: const EdgeInsets.symmetric(horizontal: 16),
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(12),
+            ),
+            child: Column(
+              children: [
+                _buildListTile(
+                  icon: Icons.card_membership,
+                  title: 'TIMS Bookings',
+                  subtitle: 'View your TIMS permit history',
+                  onTap: () => Navigator.push(
+                    context,
+                    MaterialPageRoute(builder: (context) => const TimsListScreen()),
+                  ),
+                ),
+                // Add more booking related items here if needed
+              ],
+            ),
+          ),
+
           const SizedBox(height: 16),
 
           // Account Settings Section

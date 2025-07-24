@@ -5,6 +5,8 @@ import '../providers/auth_provider.dart';
 import '../models/tims_model.dart';
 import 'package:intl/intl.dart';
 import 'package:image_picker/image_picker.dart';
+import 'dart:io';
+import '../services/cloudinary_service.dart';
 
 class TimsBookingScreen extends StatefulWidget {
   final int trekId;
@@ -27,6 +29,7 @@ class _TimsBookingScreenState extends State<TimsBookingScreen> {
   final _fullNameController = TextEditingController();
   final _nationalityController = TextEditingController();
   final _passportController = TextEditingController();
+  final _transactionIdController = TextEditingController();
   String _selectedGender = 'Male';
   DateTime? _selectedDateOfBirth;
   DateTime? _selectedEntryDate;
@@ -42,13 +45,15 @@ class _TimsBookingScreenState extends State<TimsBookingScreen> {
   final _homeMobileController = TextEditingController();
   final _homeOfficeController = TextEditingController();
   final _homeAddressController = TextEditingController();
-  String? _selectedImageUrl;
+  File? _selectedImage;
+  String? _selectedImagePath;
 
   @override
   void dispose() {
     _fullNameController.dispose();
     _nationalityController.dispose();
     _passportController.dispose();
+    _transactionIdController.dispose();
     _nepalContactNameController.dispose();
     _nepalOrganizationController.dispose();
     _nepalDesignationController.dispose();
@@ -88,10 +93,9 @@ class _TimsBookingScreenState extends State<TimsBookingScreen> {
     final XFile? image = await picker.pickImage(source: ImageSource.gallery);
     
     if (image != null) {
-      // Here you would typically upload the image to your server
-      // For now, we'll just store the path
       setState(() {
-        _selectedImageUrl = image.path;
+        _selectedImage = File(image.path);
+        _selectedImagePath = image.path;
       });
     }
   }
@@ -104,9 +108,16 @@ class _TimsBookingScreenState extends State<TimsBookingScreen> {
       );
       return;
     }
-    if (_selectedImageUrl == null) {
+    if (_selectedImage == null) {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(content: Text('Please select a photo')),
+      );
+      return;
+    }
+
+    if (_transactionIdController.text.isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Please enter transaction ID')),
       );
       return;
     }
@@ -119,10 +130,10 @@ class _TimsBookingScreenState extends State<TimsBookingScreen> {
       return;
     }
 
-    final booking = TimsBooking(
+    final booking = TimsBooking.create(
       trekId: widget.trekId,
-      transactionId: 'TRX${DateTime.now().millisecondsSinceEpoch}',
-      image: _selectedImageUrl!,
+      transactionId: _transactionIdController.text,
+      permitCost: '2000.00',
       fullName: _fullNameController.text,
       nationality: _nationalityController.text,
       passportNumber: _passportController.text,
@@ -146,24 +157,69 @@ class _TimsBookingScreenState extends State<TimsBookingScreen> {
       transitPassCost: '1500.00',
     );
 
-    final success = await Provider.of<TimsProvider>(context, listen: false)
-        .bookTims(booking, authProvider.token!);
+    print('Booking TIMS with details: $booking');
+    print(booking.toJson());
 
-    if (!mounted) return;
+    try {
+      // First upload the image to Cloudinary
+      final imageUrl = await CloudinaryService.uploadImage(_selectedImage!);
+      
+      if (!mounted) return;
 
-    if (success) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('TIMS booked successfully')),
+      // Update the booking with the uploaded image URL
+      final bookingWithImage = TimsBooking(
+        trekId: booking.trekId,
+        transactionId: booking.transactionId,
+        image: imageUrl,  // Using the uploaded image URL
+        fullName: booking.fullName,
+        nationality: booking.nationality,
+        passportNumber: booking.passportNumber,
+        gender: booking.gender,
+        dateOfBirth: booking.dateOfBirth,
+        trekkerArea: booking.trekkerArea,
+        route: booking.route,
+        entryDate: booking.entryDate,
+        exitDate: booking.exitDate,
+        nepalContactName: booking.nepalContactName,
+        nepalOrganization: booking.nepalOrganization,
+        nepalDesignation: booking.nepalDesignation,
+        nepalMobile: booking.nepalMobile,
+        nepalOfficeNumber: booking.nepalOfficeNumber,
+        nepalAddress: booking.nepalAddress,
+        homeContactName: booking.homeContactName,
+        homeCity: booking.homeCity,
+        homeMobile: booking.homeMobile,
+        homeOfficeNumber: booking.homeOfficeNumber,
+        homeAddress: booking.homeAddress,
+        transitPassCost: booking.transitPassCost,
+        permitCost: booking.permitCost,
       );
-      Navigator.pop(context);
-    } else {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text(
-            Provider.of<TimsProvider>(context, listen: false).errorMessage ?? 
-            'Failed to book TIMS'
+
+      // Now send the booking with the Cloudinary URL
+      final success = await Provider.of<TimsProvider>(context, listen: false)
+          .bookTims(bookingWithImage, authProvider.token!);
+
+      if (!mounted) return;
+
+      if (success) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('TIMS booked successfully')),
+        );
+        Navigator.pop(context);
+      } else {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(
+              Provider.of<TimsProvider>(context, listen: false).errorMessage ?? 
+              'Failed to book TIMS'
+            ),
           ),
-        ),
+        );
+      }
+    } catch (e) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Failed to upload image: ${e.toString()}')),
       );
     }
   }
@@ -184,14 +240,23 @@ class _TimsBookingScreenState extends State<TimsBookingScreen> {
               style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
             ),
             const SizedBox(height: 16),
+            TextFormField(
+              controller: _transactionIdController,
+              decoration: const InputDecoration(
+                labelText: 'Transaction ID',
+                border: OutlineInputBorder(),
+              ),
+              validator: (value) => value?.isEmpty ?? true ? 'Please enter transaction ID' : null,
+            ),
+            const SizedBox(height: 16),
             ElevatedButton.icon(
               onPressed: _pickImage,
               icon: const Icon(Icons.photo),
-              label: Text(_selectedImageUrl == null ? 'Select Photo' : 'Change Photo'),
+              label: Text(_selectedImage == null ? 'Select Photo' : 'Change Photo'),
             ),
-            if (_selectedImageUrl != null) ...[
+            if (_selectedImagePath != null) ...[
               const SizedBox(height: 8),
-              Text('Photo selected: ${_selectedImageUrl!.split('/').last}'),
+              Text('Photo selected: ${_selectedImagePath!.split('/').last}'),
             ],
             const SizedBox(height: 16),
             TextFormField(

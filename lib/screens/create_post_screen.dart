@@ -56,13 +56,30 @@ class _CreatePostScreenState extends State<CreatePostScreen> {
     });
 
     try {
-      final token = Provider.of<AuthProvider>(context, listen: false).token;
+      final authProvider = Provider.of<AuthProvider>(context, listen: false);
+      final token = authProvider.token;
+      final user = authProvider.user;
+      
       if (token == null) {
         throw Exception('Not authenticated');
       }
+      if (user == null) {
+        throw Exception('User not found');
+      }
 
       final success = await Provider.of<PostProvider>(context, listen: false)
-          .createPost(_selectedTrek!.id, _content, _selectedImages, token: token);
+          .createPost(
+            _selectedTrek!.id,
+            _content,
+            _selectedImages,
+            token: token,
+            user: PostUser(
+              id: user.user.id,
+              displayName: user.displayName,
+              photoUrl: user.photoUrl,
+            ),
+            trekName: _selectedTrek!.name,
+          );
 
       if (success) {
         Navigator.of(context).pop(true); // Pass true to indicate success

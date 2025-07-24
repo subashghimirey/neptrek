@@ -9,7 +9,33 @@ import '../utils/constants.dart';
 import '../services/cloudinary_service.dart';
 
 class PostProvider with ChangeNotifier {
+  static const _maxImageSize = 5 * 1024 * 1024; // 5MB
+  static const _supportedImageTypes = ['jpg', 'jpeg', 'png', 'gif'];
+  
   List<Post> _posts = [];
+
+  bool _validateImage(File image) {
+    if (!_supportedImageTypes.any((ext) => image.path.toLowerCase().endsWith(ext))) {
+      _errorMessage = 'Unsupported image type. Please use JPG, JPEG, PNG or GIF.';
+      return false;
+    }
+    if (image.lengthSync() > _maxImageSize) {
+      _errorMessage = 'Image size too large. Maximum size is 5MB.';
+      return false;
+    }
+    return true;
+  }
+
+  String? _handleError(dynamic e) {
+    if (e.toString().contains('timeout')) {
+      return 'Server is taking too long to respond. Please try again.';
+    } else if (e.toString().contains('SocketException')) {
+      return 'Cannot connect to server. Please check your internet connection.';
+    } else if (e.toString().contains('HandshakeException')) {
+      return 'Secure connection failed. Please try again.';
+    }
+    return 'An error occurred: ${e.toString()}';
+  }
   bool _isLoading = false;
   String? _errorMessage;
   bool _isLoadingAction = false;
@@ -21,7 +47,12 @@ class PostProvider with ChangeNotifier {
 
   final String _postsUrl = '${ApiConstants.apiUrl}/posts/';
 
-  Future<bool> createPost(int trekId, String content, List<File> images, {PostLocation? location, required String token}) async {
+  Future<bool> createPost(int trekId, String content, List<File> images, {
+    PostLocation? location, 
+    required String token,
+    required PostUser user,
+    required String trekName,
+  }) async {
     _isLoading = true;
     _errorMessage = null;
     notifyListeners();
@@ -30,7 +61,16 @@ class PostProvider with ChangeNotifier {
       // First upload images to Cloudinary if any
       List<String> imageUrls = [];
       if (images.isNotEmpty) {
-        imageUrls = await CloudinaryService.uploadImages(images);
+        try {
+          // Upload images in parallel
+          final futures = images.map((image) => CloudinaryService.uploadImage(image));
+          imageUrls = await Future.wait(futures);
+        } catch (e) {
+          _errorMessage = 'Failed to upload one or more images: ${e.toString()}';
+          _isLoading = false;
+          notifyListeners();
+          return false;
+        }
       }
 
       // Create post data
@@ -38,7 +78,6 @@ class PostProvider with ChangeNotifier {
         trekId: trekId,
         content: content,
         images: imageUrls,
-
       );
 
       // Send post request
@@ -97,7 +136,7 @@ class PostProvider with ChangeNotifier {
 
       if (response.statusCode == 200) {
         // Update the post's like status in the local list
-        final index = _posts.indexWhere((post) => post.id != null && post.id == postId);
+        final index = _posts.indexWhere((post) => post.id == postId);
         if (index != -1) {
           final post = _posts[index];
           _posts[index] = post.copyWith(
@@ -124,7 +163,10 @@ class PostProvider with ChangeNotifier {
     }
   }
 
-  Future<Comment?> addComment(int postId, String content, String token, {int? parentId}) async {
+  Future<Comment?> addComment(int postId, String content, String token, {
+    int? parentId,
+    required PostUser user,
+  }) async {
     _isLoadingAction = true;
     notifyListeners();
 
@@ -138,7 +180,8 @@ class PostProvider with ChangeNotifier {
         body: json.encode({
           'post': postId,
           'content': content,
-          'parent': parentId,
+          'user': user.toJson(),
+          if (parentId != null) 'parent': parentId,
         }),
       );
 
@@ -146,7 +189,7 @@ class PostProvider with ChangeNotifier {
         final newComment = Comment.fromJson(json.decode(response.body));
         
         // Update the post's comments in the local list
-        final index = _posts.indexWhere((post) => post.id != null && post.id == postId);
+        final index = _posts.indexWhere((post) => post.id == postId);
         if (index != -1) {
           final post = _posts[index];
           if (parentId == null) {
@@ -189,14 +232,17 @@ class PostProvider with ChangeNotifier {
     }
   }
 
-  Future<void> fetchPosts(String token) async {
+  Future<void> fetchPosts(String token, {bool refresh = false}) async {
+    if (_isLoading) return;
+
     _isLoading = true;
     _errorMessage = null;
     notifyListeners();
 
     try {
+      final url = Uri.parse(_postsUrl);
       final response = await http.get(
-        Uri.parse(_postsUrl),
+        url,
         headers: {
           'Content-Type': 'application/json',
           'Authorization': 'Token $token',
@@ -209,8 +255,10 @@ class PostProvider with ChangeNotifier {
       );
 
       if (response.statusCode == 200) {
-        final List<dynamic> responseData = json.decode(response.body);
-        _posts = responseData.map((data) => Post.fromJson(data)).toList();
+        final List<dynamic> postsData = json.decode(response.body) as List<dynamic>;
+        final newPosts = postsData.map((data) => Post.fromJson(data as Map<String, dynamic>)).toList();
+        
+        _posts = newPosts;
         _isLoading = false;
         notifyListeners();
       } else {

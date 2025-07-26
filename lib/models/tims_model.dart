@@ -143,7 +143,7 @@ class TimsBooking {
 
   factory TimsBooking.fromJson(Map<String, dynamic> json) {
     return TimsBooking(
-      trekId: json['trek_id'],
+      trekId: json['trek_id'] as int? ?? -1,
       transactionId: json['transaction_id'],
       image: json['image'],
       fullName: json['full_name'],

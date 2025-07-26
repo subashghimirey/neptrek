@@ -14,8 +14,8 @@ class PostUser {
 
   factory PostUser.fromJson(Map<String, dynamic> json) {
     return PostUser(
-      id: json['id'] as int,
-      displayName: json['display_name'] as String,
+      id: json['id'] is String ? int.parse(json['id']) : (json['id'] as int? ?? -1),
+      displayName: json['display_name'] as String? ?? 'Unknown',
       photoUrl: json['photo_url'] as String? ?? '',
     );
   }
@@ -68,9 +68,13 @@ class PostLocation {
 
   factory PostLocation.fromJson(Map<String, dynamic> json) {
     return PostLocation(
-      latitude: json['latitude']?.toDouble(),
-      longitude: json['longitude']?.toDouble(),
-      placeName: json['place_name'],
+      latitude: json['latitude'] is String 
+          ? double.tryParse(json['latitude']) 
+          : (json['latitude'] as num?)?.toDouble(),
+      longitude: json['longitude'] is String 
+          ? double.tryParse(json['longitude']) 
+          : (json['longitude'] as num?)?.toDouble(),
+      placeName: json['place_name'] as String?,
     );
   }
 }
@@ -130,24 +134,35 @@ class Post {
 
   factory Post.fromJson(Map<String, dynamic> json) {
     return Post(
-      id: json['id'] as int,
-      trek: json['trek'] as int,
-      trekName: json['trek_name'] as String,
-      user: PostUser.fromJson(json['user'] as Map<String, dynamic>),
-      content: json['content'] as String,
-      images: (json['images'] as List<dynamic>).map((e) => e.toString()).toList(),
-      location: json['location'] != null 
+      id: json['id'] is String ? int.parse(json['id']) : (json['id'] as int? ?? -1),
+      trek: json['trek'] is String ? int.parse(json['trek']) : (json['trek'] as int? ?? -1),
+      trekName: json['trek_name'] as String? ?? '',
+      user: json['user'] is Map<String, dynamic> 
+          ? PostUser.fromJson(json['user'] as Map<String, dynamic>)
+          : PostUser(id: -1, displayName: 'Unknown', photoUrl: ''),
+      content: json['content'] as String? ?? '',
+      images: (json['images'] as List<dynamic>?)?.map((e) => e.toString()).toList() ?? [],
+      location: json['location'] is Map<String, dynamic>
           ? PostLocation.fromJson(json['location'] as Map<String, dynamic>)
           : null,
-      likesCount: json['likes_count'] as int,
-      commentsCount: json['comments_count'] as int,
-      status: json['status'] as String,
-      createdAt: DateTime.parse(json['created_at'] as String),
-      updatedAt: DateTime.parse(json['updated_at'] as String),
+      likesCount: json['likes_count'] is String 
+          ? int.parse(json['likes_count']) 
+          : (json['likes_count'] as int? ?? 0),
+      commentsCount: json['comments_count'] is String 
+          ? int.parse(json['comments_count']) 
+          : (json['comments_count'] as int? ?? 0),
+      status: json['status'] as String? ?? 'active',
+      createdAt: json['created_at'] != null 
+          ? DateTime.parse(json['created_at'].toString()) 
+          : DateTime.now(),
+      updatedAt: json['updated_at'] != null 
+          ? DateTime.parse(json['updated_at'].toString()) 
+          : DateTime.now(),
       comments: (json['comments'] as List<dynamic>?)
-          ?.map((e) => Comment.fromJson(e as Map<String, dynamic>))
+          ?.where((e) => e is Map<String, dynamic>)
+          .map((e) => Comment.fromJson(e as Map<String, dynamic>))
           .toList() ?? const [],
-      isLiked: json['is_liked'] as bool,
+      isLiked: json['is_liked'] as bool? ?? false,
     );
   }
 

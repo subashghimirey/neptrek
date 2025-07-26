@@ -12,7 +12,7 @@ class SOSProvider with ChangeNotifier {
   bool get isLoading => _isLoading;
   String? get errorMessage => _errorMessage;
 
-  static const String _baseUrl = 'http://192.168.1.5:8000/api/';
+  static const String _baseUrl = 'http://192.168.1.3:8000/api/';
   final String _sosUrl = '${_baseUrl}sos/';
 
   Future<bool> sendSOSAlert(String description, String token) async {

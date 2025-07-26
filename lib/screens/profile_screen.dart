@@ -1,10 +1,14 @@
 // lib/screens/profile_screen.dart
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
+import 'package:image_picker/image_picker.dart';
+import 'dart:io';
 import 'package:neptrek/providers/auth_provider.dart';
 import 'package:neptrek/screens/interests_screen.dart';
 import 'package:neptrek/screens/favorites_screen.dart';
 import 'package:neptrek/screens/tims_list_screen.dart';
+import 'package:neptrek/services/cloudinary_service.dart';
+import 'package:neptrek/utils/constants.dart';
 
 class ProfileScreen extends StatelessWidget {
   const ProfileScreen({super.key});

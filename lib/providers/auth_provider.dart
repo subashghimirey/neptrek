@@ -267,6 +267,86 @@ class AuthProvider with ChangeNotifier {
     }
   }
 
+  // Update user profile
+  Future<bool> updateProfile({String? displayName, String? photoUrl}) async {
+    if (_user == null || _token == null) {
+      _errorMessage = 'User not authenticated';
+      notifyListeners();
+      return false;
+    }
+
+    _isLoading = true;
+    _errorMessage = null;
+    notifyListeners();
+
+    try {
+      final String updateUrl = '${ApiConstants.apiUrl}/users/${_user!.user.id}/';
+      
+      final Map<String, dynamic> requestBody = {
+        'display_name': displayName,
+        'photo_url': photoUrl,
+      }..removeWhere((key, value) => value == null);
+
+      final response = await http.patch(
+        Uri.parse(updateUrl),
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': 'Token $_token',
+        },
+        body: json.encode(requestBody),
+      ).timeout(
+        const Duration(seconds: 15),
+        onTimeout: () {
+          throw Exception('Request timeout - Server took too long to respond');
+        },
+      );
+
+      if (response.statusCode == 200) {
+        final Map<String, dynamic> responseData = json.decode(response.body);
+        final updatedAuthUser = _user!.copyWith(
+          displayName: displayName ?? _user!.displayName,
+          photoUrl: photoUrl ?? _user!.photoUrl,
+        );
+        
+        _user = updatedAuthUser;
+        _isLoading = false;
+        notifyListeners();
+        
+        // Save updated user data to SharedPreferences in background
+        _saveUserAndToken(_token!, _user!).then((_) {
+        }).catchError((error) {
+        });
+        
+        return true;
+      } else {
+        try {
+          final Map<String, dynamic> errorData = json.decode(response.body);
+          _errorMessage = errorData['message'] ?? errorData['error'] ?? 'Failed to update profile';
+        } catch (e) {
+          _errorMessage = 'Failed to update profile: HTTP ${response.statusCode}';
+        }
+        _isLoading = false;
+        notifyListeners();
+        return false;
+      }
+    } catch (e) {
+      if (e.toString().contains('timeout') || e.toString().contains('Request timeout')) {
+        _errorMessage = 'Server is taking too long to respond. Please check your network connection.';
+      } else if (e.toString().contains('SocketException') || e.toString().contains('Connection refused')) {
+        _errorMessage = 'Cannot connect to server. Please check if the server is running and your internet connection.';
+      } else if (e.toString().contains('HandshakeException') || e.toString().contains('TlsException')) {
+        _errorMessage = 'SSL/TLS connection error. Please check server configuration.';
+      } else if (e.toString().contains('FormatException')) {
+        _errorMessage = 'Invalid server response format. Please try again.';
+      } else {
+        _errorMessage = 'Network error while updating profile: ${e.toString()}';
+      }
+      _isLoading = false;
+      notifyListeners();
+      return false;
+    }
+  }
+
   // Update user interests
   Future<bool> updateUserInterests(List<String> interests) async {
     if (_user == null || _token == null) {
